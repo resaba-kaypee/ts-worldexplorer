@@ -112,7 +112,42 @@ export class PopulationServiceImpl implements PopulationService {
   }
 
   async getCountry(countryCode: string): Promise<Country> {
-    throw new Error("Not implemented yet");
+    if (!countryCode || "" === countryCode.trim()) {
+      throw new Error("The country code must be provided!");
+    }
+
+    const response: Response = await fetch(
+      `${this.countriesApiBaseUrl}/${countryCode}?${WorldBankApiV2Params.FORMAT}=${WorldBankApiV2Formats.JSON}`
+    );
+
+    const checkedResponse: Response = await this.checkResponseStatus(response);
+
+    let jsonContent: unknown = await this.getJsonContent(checkedResponse);
+
+    const validationResult = worldBankApiV2CountryResponseValidator.decode(
+      jsonContent
+    );
+
+    ThrowReporter.report(validationResult); // add the second part here
+
+    // from here on, we know that the validation has passed
+    const countries = (validationResult.value as WorldBankApiV2CountryResponse)[1];
+    if (countries.length > 1) {
+      return Promise.reject(
+        "More than one country was returned. This should not happen"
+      );
+    }
+
+    const country = countries[0];
+
+    return new Country(
+      country.name,
+      country.id,
+      country.iso2Code,
+      country.capitalCity,
+      country.longitude,
+      country.latitude
+    );
   }
 
   async getTotalPopulation(
