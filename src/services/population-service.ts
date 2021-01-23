@@ -40,7 +40,8 @@ export class PopulationServiceImpl implements PopulationService {
     );
   }
 
-  // :> status check
+  // :> UTILITIES
+  // status check
   async checkResponseStatus(response: Response): Promise<Response> {
     if (!response) {
       throw new Error("A response must be provided!");
@@ -52,7 +53,7 @@ export class PopulationServiceImpl implements PopulationService {
     }
   }
 
-  // :> convert response to json
+  // convert response to json
   async getJsonContent(response: Response): Promise<unknown> {
     if (!response) {
       throw new Error("A response must be provided!");
@@ -72,6 +73,20 @@ export class PopulationServiceImpl implements PopulationService {
 
     return jsonContent;
   }
+
+  // population indicator
+  getBaseIndicatorApiUrlFor(
+    indicator: WorldBankApiV2Indicators,
+    country?: Country
+  ) {
+    let countryCode = "all";
+    if (country) {
+      countryCode = country.id;
+    }
+    return `${this.countriesApiBaseUrl}/${countryCode}${WorldBankApiV2.INDICATORS_API_PREFIX}/${indicator}`;
+  }
+
+  // :> END UTILITIES
 
   async getAllCountries(): Promise<Country[]> {
     const response: Response = await fetch(
@@ -154,7 +169,39 @@ export class PopulationServiceImpl implements PopulationService {
     country: Country,
     dateRange: string
   ): Promise<DataPoint[]> {
-    throw new Error("Not implemented yet");
+    const response: Response = await fetch(
+      `${this.getBaseIndicatorApiUrlFor(
+        WorldBankApiV2Indicators.TOTAL_POPULATION,
+        country
+      )}?${WorldBankApiV2Params.FORMAT}=${WorldBankApiV2Formats.JSON}&${
+        WorldBankApiV2Params.PER_PAGE
+      }=1000&${WorldBankApiV2Params.DATE}=${dateRange}`
+    );
+
+    const checkedResponse: Response = await this.checkResponseStatus(response);
+
+    let jsonContent: unknown = await this.getJsonContent(checkedResponse);
+
+    const validationResult = worldBankApiV2IndicatorResponseValidator.decode(
+      jsonContent
+    );
+
+    ThrowReporter.report(validationResult);
+
+    // from here on, we know that the validation has passed
+    const dataPoints = (validationResult.value as WorldBankApiV2IndicatorResponse)[1];
+
+    let retVal: DataPoint[] = [];
+    if (dataPoints) {
+      // we might not get anything back
+      retVal = dataPoints
+        .filter((dataPoint) => dataPoint.value !== null) // we only include data points for which we have a value
+        .map(
+          (dataPoint) =>
+            new DataPoint(dataPoint.date, dataPoint.value as number)
+        );
+    }
+    return retVal;
   }
 
   async getFemalePopulation(
