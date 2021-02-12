@@ -204,52 +204,127 @@ export class PopulationServiceImpl implements PopulationService {
     return retVal;
   }
 
+  async getIndicatorData(
+    indicator: WorldBankApiV2Indicators,
+    country: Country,
+    dateRange: string,
+    perPage: number
+  ): Promise<DataPoint[]> {
+    const response: Response = await fetch(
+      `${this.getBaseIndicatorApiUrlFor(indicator, country)}?${
+        WorldBankApiV2Params.FORMAT
+      }=${WorldBankApiV2Formats.JSON}&${
+        WorldBankApiV2Params.PER_PAGE
+      }=${perPage}&${WorldBankApiV2Params.DATE}=${dateRange}`
+    );
+
+    const checkedResponse: Response = await this.checkResponseStatus(response);
+
+    let jsonContent: unknown = await this.getJsonContent(checkedResponse);
+
+    const validationResult = worldBankApiV2IndicatorResponseValidator.decode(
+      jsonContent
+    );
+
+    ThrowReporter.report(validationResult);
+
+    // from here on, we know that the validation has passed
+    const dataPoints = (validationResult.value as WorldBankApiV2IndicatorResponse)[1];
+
+    let retVal: DataPoint[] = [];
+    if (dataPoints) {
+      // we might not get anything back
+      retVal = dataPoints
+        .filter((dataPoint) => dataPoint.value !== null) // we only include data points for which we have a value
+        .map(
+          (dataPoint) =>
+            new DataPoint(dataPoint.date, dataPoint.value as number)
+        );
+    }
+    return retVal;
+  }
+
   async getFemalePopulation(
     country: Country,
     dateRange: string
   ): Promise<DataPoint[]> {
-    throw new Error("Not implemented yet");
+    return this.getIndicatorData(
+      WorldBankApiV2Indicators.TOTAL_FEMALE_POPULATION,
+      country,
+      dateRange,
+      1000
+    );
   }
 
   async getMalePopulation(
     country: Country,
     dateRange: string
   ): Promise<DataPoint[]> {
-    throw new Error("Not implemented yet");
+    return this.getIndicatorData(
+      WorldBankApiV2Indicators.TOTAL_MALE_POPULATION,
+      country,
+      dateRange,
+      1000
+    );
   }
 
   async getAdultFemaleLiteracy(
     country: Country,
     dateRange: string
   ): Promise<DataPoint[]> {
-    throw new Error("Not implemented yet");
+    return this.getIndicatorData(
+      WorldBankApiV2Indicators.ADULT_FEMALE_LITERACY,
+      country,
+      dateRange,
+      1000
+    );
   }
 
   async getAdultMaleLiteracy(
     country: Country,
     dateRange: string
   ): Promise<DataPoint[]> {
-    throw new Error("Not implemented yet");
+    return this.getIndicatorData(
+      WorldBankApiV2Indicators.ADULT_MALE_LITERACY,
+      country,
+      dateRange,
+      1000
+    );
   }
 
   async getFemaleSurvivalToAge65(
     country: Country,
     dateRange: string
   ): Promise<DataPoint[]> {
-    throw new Error("Not implemented yet");
-  }
-
-  async getLifeExpectancy(
-    country: Country,
-    dateRange: string
-  ): Promise<DataPoint[]> {
-    throw new Error("Not implemented yet");
+    return this.getIndicatorData(
+      WorldBankApiV2Indicators.ADULT_FEMALE_SURVIVAL_TO_65,
+      country,
+      dateRange,
+      1000
+    );
   }
 
   async getMaleSurvivalToAge65(
     country: Country,
     dateRange: string
   ): Promise<DataPoint[]> {
-    throw new Error("Not implemented yet");
+    return this.getIndicatorData(
+      WorldBankApiV2Indicators.ADULT_MALE_SURVIVAL_TO_65,
+      country,
+      dateRange,
+      1000
+    );
+  }
+
+  async getLifeExpectancy(
+    country: Country,
+    dateRange: string
+  ): Promise<DataPoint[]> {
+    return this.getIndicatorData(
+      WorldBankApiV2Indicators.LIFE_EXPECTANCY,
+      country,
+      dateRange,
+      1000
+    );
   }
 }
