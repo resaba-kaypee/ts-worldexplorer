@@ -63,7 +63,7 @@ export class WorldExplorerControllerImpl implements WorldExplorerController {
     const retVal: number[] = [];
     const yearGenerator = this.generateYears(2000, 20);
 
-    let done: boolean = false;
+    let done: boolean | undefined = false;
     while (!done) {
       const res = yearGenerator.next();
       done = res.done;
@@ -107,7 +107,7 @@ export class WorldExplorerControllerImpl implements WorldExplorerController {
       !chartFormDetails.toYear ||
       !chartFormDetails.chartType
     ) {
-      throw new Error("The chart details couldn't be retrievedfrom the view!");
+      throw new Error("The chart details couldn't be retrieved from the view!");
     }
 
     let country: Country;
