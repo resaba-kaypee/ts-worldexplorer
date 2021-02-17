@@ -83,7 +83,7 @@ export class PopulationServiceImpl implements PopulationService {
     if (country) {
       countryCode = country.id;
     }
-    return `${this.countriesApiBaseUrl}/${countryCode}${WorldBankApiV2.INDICATORS_API_PREFIX}/${indicator}`;
+    return `${this.countriesApiBaseUrl}/${countryCode}/${WorldBankApiV2.INDICATORS_API_PREFIX}/${indicator}`;
   }
 
   // :> END UTILITIES
