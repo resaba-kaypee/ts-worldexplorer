@@ -9,6 +9,8 @@
     "build": "webpack --config webpack.prod.js"
   },
   "dependencies": {
+    "@types/chart.js": "^2.7.40",
+    "chart.js": "^2.7.3",
     "io-ts": "1.4.2"
   },
   "devDependencies": {
